@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title> Asistencia Semanal-Equipo Terraflux</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+body {
+    font-family: Arial;
+    background: #f4f4f4;
+    text-align: center;
+}
+
+h1 {
+    background: #2c3e50;
+    color: white;
+    padding: 10px;
+}
+
+table {
+    border-collapse: collapse;
+    margin: auto;
+    width: 95%;
+    background: white;
+}
+
+th {
+    background: #2ecc71;
+    color: white;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    cursor: pointer;
+}
+
+td:hover {
+    background: #eee;
+}
+
+.ok {
+    background: #27ae60;
+    color: white;
+    font-weight: bold;
+}
+
+.falta {
+    background: #e74c3c;
+    color: white;
+    font-weight: bold;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1><img src="terraflux.png" width="200" height="40">Asistencia Semanal-Equipo Terraflux</h1>
+
+<button onclick="descargarExcel()">⬇ Descargar Excel</button>
+
+<table id="tabla">
+<thead>
+<tr>
+<th>#</th>
+<th>Nombre</th>
+<th>QR</th>
+<th>Lunes</th>
+<th>Martes</th>
+<th>Miércoles</th>
+<th>Jueves</th>
+<th>Viernes</th>
+<th>Sábado</th>
+<th>Domingo</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<script>
+
+// 👇 TU BASE (puedes agregar más)
+const empleados = [
+{ id:1, nombre:"JONATHAN GARCIA ARANGO", qr:"00004395" },
+{ id:2, nombre:"FLORENCIO ROJAS VIDAL", qr:"00004038" },
+{ id:3, nombre:"JOSE ALBERTO RUEDA FONSECA", qr:"00005260" },
+{ id:4, nombre:"GABRIEL CAHUA DE LOS SANTOS", qr:"00005330" },
+{ id:5, nombre:"JOSUE URIEL PINEDA VALENCIA", qr:"00003368" },
+{ id:6, nombre:"RUBICEL GOMEZ PEREZ", qr:"00005394" },
+{ id:7, nombre:"JUAN NOE CASTILLO RAMIREZ", qr:"00004291" },
+{ id:8, nombre:"RYDAN OLTICA LOPEZ", qr:"00005070" },
+{ id:9, nombre:"FELIPE VASQUEZ RODRIGUEZ", qr:"00005190" },
+{ id:10, nombre:"CARLOS IVAN GOMEZ MORALES", qr:"00005173" },
+{ id:11, nombre:"MARIN SANCHEZ HERANDEZ", qr:"00005457" },
+{ id:12, nombre:"RIVALDO PEREZ VAZQUEZ", qr:"00004394" },
+{ id:13, nombre:"FAUSTINO LOPEZ JIMENEZ", qr:"00005216" },
+{ id:14, nombre:"FIDEL FRANCISCO PEREZ VAZQUEZ", qr:"00004352" },
+{ id:15, nombre:"UZZIEL BAUSTISTA LOZANO", qr:"00005402" },
+{ id:16, nombre:"ISMAEL SALVADOR BONIFACIO", qr:"00005453" },
+{ id:17, nombre:"MARTIN HERNANDEZ PEREZ", qr:"00001404" },
+{ id:18, nombre:"OSCAR GAMBOA SEGURA", qr:"00000000" },
+{ id:19, nombre:"GERMAN MENDEZ HERNANDEZ", qr:"00005306" },
+{ id:20, nombre:"JUAN FRANCISCO RAMIREZ VARGAS", qr:"00006555" },
+];
+
+const dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+
+const key = "asistencia_semanal";
+
+function cargarDatos() {
+    return JSON.parse(localStorage.getItem(key)) || {};
+}
+
+function guardarDatos(data) {
+    localStorage.setItem(key, JSON.stringify(data));
+}
+
+function crearTabla() {
+    const tbody = document.querySelector("#tabla tbody");
+    const data = cargarDatos();
+
+    tbody.innerHTML = "";
+
+    empleados.forEach(emp => {
+        const tr = document.createElement("tr");
+
+        let html = `
+            <td>${emp.id}</td>
+            <td>${emp.nombre}</td>
+            <td>${emp.qr}</td>
+        `;
+
+        dias.forEach(dia => {
+            const estado = data[emp.qr]?.[dia] || "";
+            html += `<td onclick="toggle('${emp.qr}','${dia}', this)">
+                        ${estado}
+                     </td>`;
+        });
+
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+    });
+
+    pintar();
+}
+
+function toggle(qr, dia, celda) {
+    let data = cargarDatos();
+
+    if (!data[qr]) data[qr] = {};
+
+    let valor = data[qr][dia];
+
+    if (valor === "✔️") {
+        data[qr][dia] = "❌";
+    } else if (valor === "❌") {
+        data[qr][dia] = "";
+    } else {
+        data[qr][dia] = "✔️";
+    }
+
+    guardarDatos(data);
+    crearTabla();
+}
+
+function pintar() {
+    document.querySelectorAll("#tabla td").forEach(td => {
+        if (td.innerText === "✔️") {
+            td.className = "ok";
+        } else if (td.innerText === "❌") {
+            td.className = "falta";
+        }
+    });
+}
+
+function descargarExcel() {
+    const data = cargarDatos();
+    let exportar = [];
+
+    empleados.forEach(emp => {
+        let fila = {
+            Nombre: emp.nombre,
+            QR: emp.qr
+        };
+
+        dias.forEach(dia => {
+            fila[dia] = data[emp.qr]?.[dia] || "";
+        });
+
+        exportar.push(fila);
+    });
+
+    const ws = XLSX.utils.json_to_sheet(exportar);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Asistencia");
+
+    XLSX.writeFile(wb, "Asistencia_Semanal.xlsx");
+}
+
+crearTabla();
+
+</script>
+
+</body>
+</html>
