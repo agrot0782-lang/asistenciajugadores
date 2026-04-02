@@ -52,7 +52,41 @@ td:hover {
     color: white;
     font-weight: bold;
 }
+/* Botón moderno */
+.btn-pro {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 30px;
+    font-size: 18px;
+    color: white;
+    background: linear-gradient(45deg, #00c6ff, #0072ff);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.3s;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
 
+/* Hover */
+.btn-pro:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+}
+
+/* Click */
+.btn-pro:active {
+    transform: scale(0.95);
+}
+
+/* Icono animado */
+.btn-pro i {
+    transition: 0.3s;
+}
+
+.btn-pro:hover i {
+    transform: translateX(5px);
+}
 </style>
 </head>
 
@@ -61,6 +95,12 @@ td:hover {
 <h1><img src="terraflux.png" width="200" height="40">Asistencia Semanal-Equipo Terraflux</h1>
 
 <button onclick="descargarExcel()">⬇ Descargar Excel</button>
+<button class="btn-pro" onclick="window.open('https://agrot0782-lang.github.io/equipoterraflux/', '_blank')">
+    <i class="fas fa-rocket"></i>
+    Base de Datos Jugadores
+</button>
+<!-- Iconos -->
+<link href="https://agrot0782-lang.github.io/equipoterraflux/">
 
 <table id="tabla">
 <thead>
