@@ -2,9 +2,13 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title> Asistencia Semanal-Equipo Terraflux</title>
+<title>Asistencia Semanal-Equipo Terraflux</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
 <style>
 body {
@@ -48,7 +52,7 @@ td:hover {
 }
 
 .falta {
-    background: #ffa2a2;
+    background: #e47676;
     color: white;
     font-weight: bold;
 }
@@ -93,14 +97,11 @@ td:hover {
 <body>
 
 <h1><img src="terraflux.png" width="200" height="40">Asistencia Semanal-Equipo Terraflux</h1>
-
 <button onclick="descargarExcel()">⬇ Descargar Excel</button>
 <button class="btn-pro" onclick="window.open('https://agrot0782-lang.github.io/equipoterraflux/', '_blank')">
     <i class="fas fa-rocket"></i>
     Base de Datos Jugadores
 </button>
-<!-- Iconos -->
-<link href="https://agrot0782-lang.github.io/equipoterraflux/">
 
 <table id="tabla">
 <thead>
@@ -122,7 +123,21 @@ td:hover {
 
 <script>
 
-// 👇 TU BASE (puedes agregar más)
+// 🔥 CONFIG FIREBASE (YA LISTO)
+const firebaseConfig = {
+  apiKey: "AIzaSyA0J5FQsMU0XGhQ0WTD_M1iuXQ71T2caFs",
+  authDomain: "terraflux-database.firebaseapp.com",
+  databaseURL: "https://terraflux-control-default-rtdb.firebaseio.com",
+  projectId: "terraflux-database",
+  storageBucket: "terraflux-database.firebasestorage.app",
+  messagingSenderId: "1055680733887",
+  appId: "1:1055680733887:web:c3ce8a6547574b5a461c0a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// 👇 BASE DE JUGADORES
 const empleados = [
 { id:1, nombre:"JONATHAN GARCIA ARANGO", qr:"00004395" },
 { id:2, nombre:"FLORENCIO ROJAS VIDAL", qr:"00004038" },
@@ -133,39 +148,25 @@ const empleados = [
 { id:7, nombre:"JUAN NOE CASTILLO RAMIREZ", qr:"00004291" },
 { id:8, nombre:"RYDAN OLTICA LOPEZ", qr:"00005070" },
 { id:9, nombre:"FELIPE VASQUEZ RODRIGUEZ", qr:"00005190" },
-{ id:10, nombre:"CARLOS IVAN GOMEZ MORALES", qr:"00005173" },
-{ id:11, nombre:"MARIN SANCHEZ HERANDEZ", qr:"00005457" },
-{ id:12, nombre:"RIVALDO PEREZ VAZQUEZ", qr:"00004394" },
-{ id:13, nombre:"FAUSTINO LOPEZ JIMENEZ", qr:"00005216" },
-{ id:14, nombre:"FIDEL FRANCISCO PEREZ VAZQUEZ", qr:"00004352" },
-{ id:15, nombre:"UZZIEL BAUSTISTA LOZANO", qr:"00005402" },
-{ id:16, nombre:"ISMAEL SALVADOR BONIFACIO", qr:"00005453" },
-{ id:17, nombre:"MARTIN HERNANDEZ PEREZ", qr:"00001404" },
-{ id:18, nombre:"OSCAR GAMBOA SEGURA", qr:"00000000" },
-{ id:19, nombre:"GERMAN MENDEZ HERNANDEZ", qr:"00005306" },
-{ id:20, nombre:"JUAN FRANCISCO RAMIREZ VARGAS", qr:"00006555" },
+{ id:10, nombre:"FAUSTINO LOPEZ JIMENEZ", qr:"00005216" },
+{ id:11, nombre:"ISMAEL SALVADOR BONIFACIO", qr:"00005453" },
+{ id:12, nombre:"MARTIN HERNANDEZ PEREZ", qr:"00001404" },
+{ id:13, nombre:"OSCAR GAMBOA SEGURA", qr:"00000000" },
+{ id:14, nombre:"GERMAN MENDEZ HERNANDEZ", qr:"00005306" },
+{ id:15, nombre:"JUAN FRANCISCO RAMIREZ VARGAS", qr:"00006555" },
+{ id:14, nombre:"SANTOS TEZOCO GARCIA SANCHEZ", qr:"00005317" },
+{ id:15, nombre:"JCARLOS MALEIRO RAMIREZ", qr:"00006504" },
 ];
 
 const dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
 
-const key = "asistencia_semanal";
-
-function cargarDatos() {
-    return JSON.parse(localStorage.getItem(key)) || {};
-}
-
-function guardarDatos(data) {
-    localStorage.setItem(key, JSON.stringify(data));
-}
-
-function crearTabla() {
+// 🔥 CREAR TABLA
+function crearTabla(data = {}) {
     const tbody = document.querySelector("#tabla tbody");
-    const data = cargarDatos();
-
     tbody.innerHTML = "";
 
     empleados.forEach(emp => {
-        const tr = document.createElement("tr");
+        let tr = document.createElement("tr");
 
         let html = `
             <td>${emp.id}</td>
@@ -175,9 +176,7 @@ function crearTabla() {
 
         dias.forEach(dia => {
             const estado = data[emp.qr]?.[dia] || "";
-            html += `<td onclick="toggle('${emp.qr}','${dia}', this)">
-                        ${estado}
-                     </td>`;
+            html += `<td onclick="toggle('${emp.qr}','${dia}')">${estado}</td>`;
         });
 
         tr.innerHTML = html;
@@ -187,60 +186,58 @@ function crearTabla() {
     pintar();
 }
 
-function toggle(qr, dia, celda) {
-    let data = cargarDatos();
+// 🔁 TOGGLE (✔ ❌)
+function toggle(qr, dia) {
+    db.ref("asistencia/" + qr + "/" + dia).once("value", snapshot => {
+        let valor = snapshot.val();
 
-    if (!data[qr]) data[qr] = {};
+        if (valor === "✔️") valor = "❌";
+        else if (valor === "❌") valor = "";
+        else valor = "✔️";
 
-    let valor = data[qr][dia];
-
-    if (valor === "✔️") {
-        data[qr][dia] = "❌";
-    } else if (valor === "❌") {
-        data[qr][dia] = "";
-    } else {
-        data[qr][dia] = "✔️";
-    }
-
-    guardarDatos(data);
-    crearTabla();
+        db.ref("asistencia/" + qr + "/" + dia).set(valor);
+    });
 }
 
+// 🎨 COLORES
 function pintar() {
     document.querySelectorAll("#tabla td").forEach(td => {
-        if (td.innerText === "✔️") {
-            td.className = "ok";
-        } else if (td.innerText === "❌") {
-            td.className = "falta";
-        }
+        if (td.innerText === "✔️") td.className = "ok";
+        else if (td.innerText === "❌") td.className = "falta";
     });
 }
 
+// 🔄 TIEMPO REAL
+db.ref("asistencia").on("value", snapshot => {
+    const data = snapshot.val() || {};
+    crearTabla(data);
+});
+
+// 📥 EXCEL DESDE FIREBASE
 function descargarExcel() {
-    const data = cargarDatos();
-    let exportar = [];
+    db.ref("asistencia").once("value", snapshot => {
+        const data = snapshot.val() || [];
+        let exportar = [];
 
-    empleados.forEach(emp => {
-        let fila = {
-            Nombre: emp.nombre,
-            QR: emp.qr
-        };
+        empleados.forEach(emp => {
+            let fila = {
+                Nombre: emp.nombre,
+                QR: emp.qr
+            };
 
-        dias.forEach(dia => {
-            fila[dia] = data[emp.qr]?.[dia] || "";
+            dias.forEach(dia => {
+                fila[dia] = data[emp.qr]?.[dia] || "";
+            });
+
+            exportar.push(fila);
         });
 
-        exportar.push(fila);
+        const ws = XLSX.utils.json_to_sheet(exportar);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Asistencia");
+        XLSX.writeFile(wb, "Asistencia_Semanal.xlsx");
     });
-
-    const ws = XLSX.utils.json_to_sheet(exportar);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Asistencia");
-
-    XLSX.writeFile(wb, "Asistencia_Semanal.xlsx");
 }
-
-crearTabla();
 
 </script>
 
