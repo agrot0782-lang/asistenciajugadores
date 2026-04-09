@@ -2,53 +2,77 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Lista de Jugadores</title>
+<title>Asistencia Semanal - Equipo Terraflux</title>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- 🔥 FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
-body {
-    font-family: Arial;
-    text-align: center;
-    margin: 20px;
+body { font-family: Arial; background: #f4f4f4; text-align: center; }
+
+h1 {
+    background: #2c3e50;
+    color: white;
+    padding: 10px;
 }
 
 table {
     border-collapse: collapse;
-    width: 100%;
+    margin: auto;
+    width: 95%;
+    background: white;
 }
+
+th { background: #2ecc71; color: white; }
 
 th, td {
     border: 1px solid #ccc;
     padding: 8px;
+    cursor: pointer;
 }
 
-th {
-    background: #333;
-    color: white;
-}
+.ok { background: #27ae60; color: white; }
+.falta { background: #ffa2a2; color: white; }
 </style>
 </head>
 
 <body>
 
-<h2>📋 Lista de Jugadores</h2>
+<h1>📊 Asistencia Semanal - Terraflux</h1>
+
+<h3>📅 Semana:</h3>
+<select id="selectorSemana" onchange="cambiarSemana()"></select>
+
+<br><br>
+
+<button onclick="descargarExcel()">⬇ Descargar Excel</button>
 
 <table id="tabla">
+<thead>
 <tr>
-<th>ID</th>
+<th>#</th>
 <th>Nombre</th>
-<th>Posición</th>
-<th>Teléfono</th>
+<th>QR</th>
+<th>Lunes</th>
+<th>Martes</th>
+<th>Miércoles</th>
+<th>Jueves</th>
+<th>Viernes</th>
+<th>Sábado</th>
+<th>Domingo</th>
 </tr>
+</thead>
+<tbody></tbody>
 </table>
 
 <script>
 
-// 🔥 PEGA TU CONFIG AQUÍ
+// 🔥 CONFIG FIREBASE
 const firebaseConfig = {
-apiKey: "AIzaSyA0J5FQsMU0XGhQ0WTD_M1iuXQ71T2caFs",
+  apiKey: "AIzaSyA0J5FQsMU0XGhQ0WTD_M1iuXQ71T2caFs",
   authDomain: "terraflux-database.firebaseapp.com",
   databaseURL: "https://terraflux-database-default-rtdb.firebaseio.com",
   projectId: "terraflux-database",
@@ -57,39 +81,162 @@ apiKey: "AIzaSyA0J5FQsMU0XGhQ0WTD_M1iuXQ71T2caFs",
   appId: "1:1055680733887:web:c3ce8a6547574b5a461c0a",
   measurementId: "G-NXT0XRRB07"
 };
-
-firebase.initializeApp(firebaseConfig);
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app)
+const analytics = getAnalytics(app);
 const db = firebase.database();
 
-// 🔥 SOLO LECTURA (NO BORRA NADA)
-db.ref("jugadores").on("value", snap => {
+// 📅 SEMANA AUTOMÁTICA
+function obtenerSemanaActual() {
+    const hoy = new Date();
+    const inicio = new Date(hoy.getFullYear(), 0, 1);
+    const dias = Math.floor((hoy - inicio) / 86400000);
+    const semana = Math.ceil((dias + inicio.getDay() + 1) / 7);
+    return `${hoy.getFullYear()}-S${semana}`;
+}
 
-    const tabla = document.getElementById("tabla");
-    tabla.innerHTML = `
-    <tr>
-        <th>ID</th>
-        <th>Nombre</th>
-        <th>Posición</th>
-        <th>Teléfono</th>
-    </tr>`;
+let semanaActual = obtenerSemanaActual();
 
-    snap.forEach(child => {
+function rutaSemana() {
+    return "asistencia/" + semanaActual;
+}
 
-        let data = child.val();
+// 👇 JUGADORES
+const empleados = [
+{ id:1, nombre:"JONATHAN GARCIA ARANGO", qr:"00004395" },
+{ id:2, nombre:"FLORENCIO ROJAS VIDAL", qr:"00004038" },
+{ id:3, nombre:"JOSE ALBERTO RUEDA FONSECA", qr:"00005260" },
+{ id:4, nombre:"GABRIEL CAHUA DE LOS SANTOS", qr:"00005330" },
+{ id:5, nombre:"JOSUE URIEL PINEDA VALENCIA", qr:"00003368" },
+{ id:6, nombre:"RUBICEL GOMEZ PEREZ", qr:"00005394" }
+];
 
-        tabla.innerHTML += `
-        <tr>
-            <td>${child.key}</td>
-            <td>${data.nombre || ""}</td>
-            <td>${data.posicion || ""}</td>
-            <td>${data.telefono || ""}</td>
-        </tr>`;
+const dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+
+// 🔥 CARGAR HISTORIAL
+function cargarSemanas() {
+    db.ref("asistencia").once("value", snap => {
+
+        const select = document.getElementById("selectorSemana");
+        select.innerHTML = "";
+
+        let semanas = [];
+
+        snap.forEach(child => semanas.push(child.key));
+
+        semanas.sort().reverse();
+
+        if (!semanas.includes(semanaActual)) {
+            semanas.unshift(semanaActual);
+        }
+
+        semanas.forEach(s => {
+            let opt = document.createElement("option");
+            opt.value = s;
+            opt.text = s;
+            if (s === semanaActual) opt.selected = true;
+            select.appendChild(opt);
+        });
     });
+}
 
-});
+// 🔁 CAMBIAR SEMANA
+function cambiarSemana() {
+    semanaActual = document.getElementById("selectorSemana").value;
+    crearTabla();
+}
+
+// 🔥 CREAR TABLA
+function crearTabla() {
+    db.ref(rutaSemana()).once("value", snap => {
+
+        const data = snap.val() || {};
+        const tbody = document.querySelector("#tabla tbody");
+
+        tbody.innerHTML = "";
+
+        empleados.forEach(emp => {
+
+            let tr = document.createElement("tr");
+
+            let html = `
+                <td>${emp.id}</td>
+                <td>${emp.nombre}</td>
+                <td>${emp.qr}</td>
+            `;
+
+            dias.forEach(dia => {
+                let estado = data[emp.qr]?.[dia] || "";
+                html += `<td onclick="toggle('${emp.qr}','${dia}')">${estado}</td>`;
+            });
+
+            tr.innerHTML = html;
+            tbody.appendChild(tr);
+        });
+
+        pintar();
+    });
+}
+
+// 🔥 TOGGLE
+function toggle(qr, dia) {
+    db.ref(rutaSemana()).once("value", snap => {
+
+        let data = snap.val() || {};
+
+        if (!data[qr]) data[qr] = {};
+
+        let valor = data[qr][dia];
+
+        if (valor === "✔️") data[qr][dia] = "❌";
+        else if (valor === "❌") data[qr][dia] = "";
+        else data[qr][dia] = "✔️";
+
+        db.ref(rutaSemana()).set(data);
+        crearTabla();
+    });
+}
+
+// 🎨 COLORES
+function pintar() {
+    document.querySelectorAll("#tabla td").forEach(td => {
+        if (td.innerText === "✔️") td.className = "ok";
+        else if (td.innerText === "❌") td.className = "falta";
+    });
+}
+
+// 📥 EXCEL
+function descargarExcel() {
+    db.ref(rutaSemana()).once("value", snap => {
+
+        const data = snap.val() || [];
+        let exportar = [];
+
+        empleados.forEach(emp => {
+            let fila = {
+                Nombre: emp.nombre,
+                QR: emp.qr,
+                Semana: semanaActual
+            };
+
+            dias.forEach(dia => {
+                fila[dia] = data[emp.qr]?.[dia] || "";
+            });
+
+            exportar.push(fila);
+        });
+
+        const ws = XLSX.utils.json_to_sheet(exportar);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Asistencia");
+
+        XLSX.writeFile(wb, "Asistencia_" + semanaActual + ".xlsx");
+    });
+}
+
+// 🚀 INIT
+cargarSemanas();
+crearTabla();
+
 </script>
 
 </body>
