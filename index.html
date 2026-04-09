@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Asistencia Semanal - Equipo Terraflux</title>
+<title>Asistencia Semanal - Terraflux</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -13,29 +13,19 @@
 <style>
 body { font-family: Arial; background: #f4f4f4; text-align: center; }
 
-h1 {
-    background: #2c3e50;
-    color: white;
-    padding: 10px;
-}
+h1 { background: #2c3e50; color: white; padding: 10px; }
 
-table {
-    border-collapse: collapse;
-    margin: auto;
-    width: 95%;
-    background: white;
-}
+table { border-collapse: collapse; margin: auto; width: 95%; background: white; }
 
 th { background: #2ecc71; color: white; }
 
-th, td {
-    border: 1px solid #ccc;
-    padding: 8px;
-    cursor: pointer;
-}
+th, td { border: 1px solid #ccc; padding: 8px; cursor: pointer; }
 
 .ok { background: #27ae60; color: white; }
 .falta { background: #ffa2a2; color: white; }
+
+input { padding: 5px; margin: 5px; }
+button { padding: 6px 12px; margin: 5px; }
 </style>
 </head>
 
@@ -46,9 +36,16 @@ th, td {
 <h3>📅 Semana:</h3>
 <select id="selectorSemana" onchange="cambiarSemana()"></select>
 
-<br><br>
+<br>
 
 <button onclick="descargarExcel()">⬇ Descargar Excel</button>
+
+<br><br>
+
+<h3>➕ Agregar Jugador</h3>
+<input id="nuevoNombre" placeholder="Nombre">
+<input id="nuevoQR" placeholder="QR">
+<button onclick="agregarJugador()">Agregar</button>
 
 <table id="tabla">
 <thead>
@@ -71,8 +68,8 @@ th, td {
 <script>
 
 // 🔥 CONFIG FIREBASE
-const firebaseConfig = {
-  apiKey: "AIzaSyA0J5FQsMU0XGhQ0WTD_M1iuXQ71T2caFs",
+var firebaseConfig = {
+ apiKey: "AIzaSyA0J5FQsMU0XGhQ0WTD_M1iuXQ71T2caFs",
   authDomain: "terraflux-database.firebaseapp.com",
   databaseURL: "https://terraflux-database-default-rtdb.firebaseio.com",
   projectId: "terraflux-database",
@@ -81,8 +78,8 @@ const firebaseConfig = {
   appId: "1:1055680733887:web:c3ce8a6547574b5a461c0a",
   measurementId: "G-NXT0XRRB07"
 };
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+firebase.initializeApp(firebaseConfig);
+
 const db = firebase.database();
 
 // 📅 SEMANA AUTOMÁTICA
@@ -100,19 +97,46 @@ function rutaSemana() {
     return "asistencia/" + semanaActual;
 }
 
-// 👇 JUGADORES
-const empleados = [
-{ id:1, nombre:"JONATHAN GARCIA ARANGO", qr:"00004395" },
-{ id:2, nombre:"FLORENCIO ROJAS VIDAL", qr:"00004038" },
-{ id:3, nombre:"JOSE ALBERTO RUEDA FONSECA", qr:"00005260" },
-{ id:4, nombre:"GABRIEL CAHUA DE LOS SANTOS", qr:"00005330" },
-{ id:5, nombre:"JOSUE URIEL PINEDA VALENCIA", qr:"00003368" },
-{ id:6, nombre:"RUBICEL GOMEZ PEREZ", qr:"00005394" }
-];
-
 const dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
 
-// 🔥 CARGAR HISTORIAL
+let empleados = [];
+
+// 🔥 CARGAR JUGADORES DESDE FIREBASE
+function cargarJugadores(callback) {
+    db.ref("jugadores").once("value", snap => {
+
+        empleados = [];
+        let i = 1;
+
+        snap.forEach(child => {
+            let data = child.val();
+
+            empleados.push({
+                id: i++,
+                nombre: data.nombre,
+                qr: child.key
+            });
+        });
+
+        callback();
+    });
+}
+
+// ➕ AGREGAR JUGADOR
+function agregarJugador() {
+    let nombre = document.getElementById("nuevoNombre").value;
+    let qr = document.getElementById("nuevoQR").value;
+
+    if(!nombre || !qr) return alert("Faltan datos");
+
+    db.ref("jugadores/" + qr).set({
+        nombre: nombre
+    });
+
+    cargarJugadores(() => crearTabla());
+}
+
+// 🔥 CARGAR SEMANAS
 function cargarSemanas() {
     db.ref("asistencia").once("value", snap => {
 
@@ -142,7 +166,7 @@ function cargarSemanas() {
 // 🔁 CAMBIAR SEMANA
 function cambiarSemana() {
     semanaActual = document.getElementById("selectorSemana").value;
-    crearTabla();
+    cargarJugadores(() => crearTabla());
 }
 
 // 🔥 CREAR TABLA
@@ -192,7 +216,7 @@ function toggle(qr, dia) {
         else data[qr][dia] = "✔️";
 
         db.ref(rutaSemana()).set(data);
-        crearTabla();
+        cargarJugadores(() => crearTabla());
     });
 }
 
@@ -208,7 +232,7 @@ function pintar() {
 function descargarExcel() {
     db.ref(rutaSemana()).once("value", snap => {
 
-        const data = snap.val() || [];
+        const data = snap.val() || {};
         let exportar = [];
 
         empleados.forEach(emp => {
@@ -235,7 +259,7 @@ function descargarExcel() {
 
 // 🚀 INIT
 cargarSemanas();
-crearTabla();
+cargarJugadores(() => crearTabla());
 
 </script>
 
