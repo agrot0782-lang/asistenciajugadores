@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Asistencia Futbol - Terraflux</title>
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <!-- 🔥 FIREBASE -->
@@ -20,6 +20,25 @@ th, td { border: 1px solid #ccc; padding: 8px; cursor: pointer; }
 .falta { background: #ffa2a2; color: white; }
 input { padding: 5px; margin: 5px; }
 button { padding: 6px 12px; margin: 5px; cursor:pointer; }
+  .btn-edit {
+    background: transparent;
+    border: none;
+    color: #5b6cff;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.btn-delete {
+    background: transparent;
+    border: none;
+    color: #ff3b5c;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+button:hover {
+    transform: scale(1.2);
+}
 </style>
 </head>
 
@@ -197,8 +216,8 @@ function crearTabla(){
             <td>${emp.posicion}</td>
 
             <td>
-                <button onclick="editarJugador('${emp.qr}')">✏️</button>
-                <button onclick="borrarJugador('${emp.qr}')">🗑️</button>
+                <button class="btn-edit" onclick="editarJugador('${emp.qr}')">✏️</button>
+                <button class-btn-delete" onclick="borrarJugador('${emp.qr}')">🗑️</button>
             </td>
             `;
 
