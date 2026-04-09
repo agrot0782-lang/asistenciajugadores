@@ -45,6 +45,9 @@ button { padding: 6px 12px; margin: 5px; }
 <h3>➕ Agregar Jugador</h3>
 <input id="nuevoNombre" placeholder="Nombre">
 <input id="nuevoQR" placeholder="QR">
+ <input id="nuevoTraila" placeholder="Traila">
+ <input id="nuevoCelular" placeholder="Celular">
+ <input id="nuevoPosicion" placeholder="Posicion">
 <button onclick="agregarJugador()">Agregar</button>
 
 <table id="tabla">
@@ -53,6 +56,9 @@ button { padding: 6px 12px; margin: 5px; }
 <th>#</th>
 <th>Nombre</th>
 <th>QR</th>
+ <th>Traila</th>
+ <th>Celular</th>
+ <th>Posicion</th>
 <th>Lunes</th>
 <th>Martes</th>
 <th>Miércoles</th>
@@ -114,6 +120,9 @@ function cargarJugadores(callback) {
             empleados.push({
                 id: i++,
                 nombre: data.nombre,
+             traila: data.traila,
+             celular: data.celular,
+             posicion: data.posicion,
                 qr: child.key
             });
         });
@@ -126,7 +135,9 @@ function cargarJugadores(callback) {
 function agregarJugador() {
     let nombre = document.getElementById("nuevoNombre").value;
     let qr = document.getElementById("nuevoQR").value;
-
+ let traila = document.getElementById("nuevoTraila").value;
+  let celular = document.getElementById("nuevocelular").value;
+  let posicion = document.getElementById("nuevoposicion").value;
     if(!nombre || !qr) return alert("Faltan datos");
 
     db.ref("jugadores/" + qr).set({
@@ -186,6 +197,9 @@ function crearTabla() {
                 <td>${emp.id}</td>
                 <td>${emp.nombre}</td>
                 <td>${emp.qr}</td>
+                <td>${emp.traila}</td>
+                <td>${emp.celular}</td>
+                <td>${emp.posicion}</td>
             `;
 
             dias.forEach(dia => {
@@ -239,6 +253,9 @@ function descargarExcel() {
             let fila = {
                 Nombre: emp.nombre,
                 QR: emp.qr,
+             Traila: emp.qr,
+             Celular: emp.qr,
+             Posicion: emp.qr,
                 Semana: semanaActual
             };
 
