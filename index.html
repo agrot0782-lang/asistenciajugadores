@@ -2,243 +2,94 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Asistencia Semanal-Equipo Terraflux</title>
+<title>Lista de Jugadores</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-<!-- FIREBASE -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
 body {
     font-family: Arial;
-    background: #f4f4f4;
     text-align: center;
-}
-
-h1 {
-    background: #2c3e50;
-    color: white;
-    padding: 10px;
+    margin: 20px;
 }
 
 table {
     border-collapse: collapse;
-    margin: auto;
-    width: 95%;
-    background: white;
-}
-
-th {
-    background: #2ecc71;
-    color: white;
+    width: 100%;
 }
 
 th, td {
     border: 1px solid #ccc;
     padding: 8px;
-    cursor: pointer;
 }
 
-td:hover {
-    background: #eee;
-}
-
-.ok {
-    background: #27ae60;
+th {
+    background: #333;
     color: white;
-    font-weight: bold;
-}
-
-.falta {
-    background: #e47676;
-    color: white;
-    font-weight: bold;
-}
-/* Botón moderno */
-.btn-pro {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 15px 30px;
-    font-size: 18px;
-    color: white;
-    background: linear-gradient(45deg, #00c6ff, #0072ff);
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: 0.3s;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-}
-
-/* Hover */
-.btn-pro:hover {
-    transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 15px 30px rgba(0,0,0,0.4);
-}
-
-/* Click */
-.btn-pro:active {
-    transform: scale(0.95);
-}
-
-/* Icono animado */
-.btn-pro i {
-    transition: 0.3s;
-}
-
-.btn-pro:hover i {
-    transform: translateX(5px);
 }
 </style>
 </head>
 
 <body>
 
-<h1><img src="terraflux.png" width="200" height="40">Asistencia Semanal-Equipo Terraflux</h1>
-<button onclick="descargarExcel()">⬇ Descargar Excel</button>
-<button class="btn-pro" onclick="window.open('https://agrot0782-lang.github.io/equipoterraflux/', '_blank')">
-    <i class="fas fa-rocket"></i>
-    Base de Datos Jugadores
-</button>
+<h2>📋 Lista de Jugadores</h2>
 
 <table id="tabla">
-<thead>
 <tr>
-<th>#</th>
+<th>ID</th>
 <th>Nombre</th>
-<th>QR</th>
-<th>Lunes</th>
-<th>Martes</th>
-<th>Miércoles</th>
-<th>Jueves</th>
-<th>Viernes</th>
-<th>Sábado</th>
-<th>Domingo</th>
+<th>Posición</th>
+<th>Teléfono</th>
 </tr>
-</thead>
-<tbody></tbody>
 </table>
 
 <script>
 
-// 🔥 CONFIG FIREBASE (YA LISTO)
+// 🔥 PEGA TU CONFIG AQUÍ
 const firebaseConfig = {
-  apiKey: "AIzaSyA0J5FQsMU0XGhQ0WTD_M1iuXQ71T2caFs",
+apiKey: "AIzaSyA0J5FQsMU0XGhQ0WTD_M1iuXQ71T2caFs",
   authDomain: "terraflux-database.firebaseapp.com",
-  databaseURL: "https://terraflux-control-default-rtdb.firebaseio.com",
+  databaseURL: "https://terraflux-database-default-rtdb.firebaseio.com",
   projectId: "terraflux-database",
   storageBucket: "terraflux-database.firebasestorage.app",
   messagingSenderId: "1055680733887",
-  appId: "1:1055680733887:web:c3ce8a6547574b5a461c0a"
+  appId: "1:1055680733887:web:c3ce8a6547574b5a461c0a",
+  measurementId: "G-NXT0XRRB07"
 };
 
 firebase.initializeApp(firebaseConfig);
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app)
 const db = firebase.database();
 
-// 👇 BASE DE JUGADORES
-const empleados = [
-{ id:1, nombre:"JONATHAN GARCIA ARANGO", qr:"00004395" },
-{ id:2, nombre:"FLORENCIO ROJAS VIDAL", qr:"00004038" },
-{ id:3, nombre:"JOSE ALBERTO RUEDA FONSECA", qr:"00005260" },
-{ id:4, nombre:"GABRIEL CAHUA DE LOS SANTOS", qr:"00005330" },
-{ id:5, nombre:"JOSUE URIEL PINEDA VALENCIA", qr:"00003368" },
-{ id:6, nombre:"RUBICEL GOMEZ PEREZ", qr:"00005394" },
-{ id:7, nombre:"JUAN NOE CASTILLO RAMIREZ", qr:"00004291" },
-{ id:8, nombre:"RYDAN OLTICA LOPEZ", qr:"00005070" },
-{ id:9, nombre:"FELIPE VASQUEZ RODRIGUEZ", qr:"00005190" },
-{ id:10, nombre:"FAUSTINO LOPEZ JIMENEZ", qr:"00005216" },
-{ id:11, nombre:"ISMAEL SALVADOR BONIFACIO", qr:"00005453" },
-{ id:12, nombre:"MARTIN HERNANDEZ PEREZ", qr:"00001404" },
-{ id:13, nombre:"OSCAR GAMBOA SEGURA", qr:"00000000" },
-{ id:14, nombre:"GERMAN MENDEZ HERNANDEZ", qr:"00005306" },
-{ id:15, nombre:"JUAN FRANCISCO RAMIREZ VARGAS", qr:"00006555" },
-{ id:16, nombre:"SANTOS TEZOCO GARCIA SANCHEZ", qr:"00005317" },
-{ id:17, nombre:"CARLOS MALEIRO RAMIREZ", qr:"00006504" },
-];
+// 🔥 SOLO LECTURA (NO BORRA NADA)
+db.ref("jugadores").on("value", snap => {
 
-const dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+    const tabla = document.getElementById("tabla");
+    tabla.innerHTML = `
+    <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Posición</th>
+        <th>Teléfono</th>
+    </tr>`;
 
-// 🔥 CREAR TABLA
-function crearTabla(data = {}) {
-    const tbody = document.querySelector("#tabla tbody");
-    tbody.innerHTML = "";
+    snap.forEach(child => {
 
-    empleados.forEach(emp => {
-        let tr = document.createElement("tr");
+        let data = child.val();
 
-        let html = `
-            <td>${emp.id}</td>
-            <td>${emp.nombre}</td>
-            <td>${emp.qr}</td>
-        `;
-
-        dias.forEach(dia => {
-            const estado = data[emp.qr]?.[dia] || "";
-            html += `<td onclick="toggle('${emp.qr}','${dia}')">${estado}</td>`;
-        });
-
-        tr.innerHTML = html;
-        tbody.appendChild(tr);
+        tabla.innerHTML += `
+        <tr>
+            <td>${child.key}</td>
+            <td>${data.nombre || ""}</td>
+            <td>${data.posicion || ""}</td>
+            <td>${data.telefono || ""}</td>
+        </tr>`;
     });
 
-    pintar();
-}
-
-// 🔁 TOGGLE (✔ ❌)
-function toggle(qr, dia) {
-    db.ref("asistencia/" + qr + "/" + dia).once("value", snapshot => {
-        let valor = snapshot.val();
-
-        if (valor === "✔️") valor = "❌";
-        else if (valor === "❌") valor = "";
-        else valor = "✔️";
-
-        db.ref("asistencia/" + qr + "/" + dia).set(valor);
-    });
-}
-
-// 🎨 COLORES
-function pintar() {
-    document.querySelectorAll("#tabla td").forEach(td => {
-        if (td.innerText === "✔️") td.className = "ok";
-        else if (td.innerText === "❌") td.className = "falta";
-    });
-}
-
-// 🔄 TIEMPO REAL
-db.ref("asistencia").on("value", snapshot => {
-    const data = snapshot.val() || {};
-    crearTabla(data);
 });
-
-// 📥 EXCEL DESDE FIREBASE
-function descargarExcel() {
-    db.ref("asistencia").once("value", snapshot => {
-        const data = snapshot.val() || [];
-        let exportar = [];
-
-        empleados.forEach(emp => {
-            let fila = {
-                Nombre: emp.nombre,
-                QR: emp.qr
-            };
-
-            dias.forEach(dia => {
-                fila[dia] = data[emp.qr]?.[dia] || "";
-            });
-
-            exportar.push(fila);
-        });
-
-        const ws = XLSX.utils.json_to_sheet(exportar);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Asistencia");
-        XLSX.writeFile(wb, "Asistencia_Semanal.xlsx");
-    });
-}
-
 </script>
 
 </body>
