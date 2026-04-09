@@ -12,20 +12,14 @@
 
 <style>
 body { font-family: Arial; background: #f4f4f4; text-align: center; }
-
 h1 { background: #2c3e50; color: white; padding: 10px; }
-
 table { border-collapse: collapse; margin: auto; width: 95%; background: white; }
-
 th { background: #2ecc71; color: white; }
-
 th, td { border: 1px solid #ccc; padding: 8px; cursor: pointer; }
-
 .ok { background: #27ae60; color: white; }
 .falta { background: #ffa2a2; color: white; }
-
 input { padding: 5px; margin: 5px; }
-button { padding: 6px 12px; margin: 5px; }
+button { padding: 6px 12px; margin: 5px; cursor:pointer; }
 </style>
 </head>
 
@@ -37,7 +31,6 @@ button { padding: 6px 12px; margin: 5px; }
 <select id="selectorSemana" onchange="cambiarSemana()"></select>
 
 <br>
-
 <button onclick="descargarExcel()">⬇ Descargar Excel</button>
 
 <br><br>
@@ -45,9 +38,9 @@ button { padding: 6px 12px; margin: 5px; }
 <h3>➕ Agregar Jugador</h3>
 <input id="nuevoNombre" placeholder="Nombre">
 <input id="nuevoQR" placeholder="QR">
- <input id="nuevoTraila" placeholder="Traila">
- <input id="nuevoCelular" placeholder="Celular">
- <input id="nuevoPosicion" placeholder="Posicion">
+<input id="nuevoTraila" placeholder="Traila">
+<input id="nuevoCelular" placeholder="Celular">
+<input id="nuevoPosicion" placeholder="Posicion">
 <button onclick="agregarJugador()">Agregar</button>
 
 <table id="tabla">
@@ -56,9 +49,10 @@ button { padding: 6px 12px; margin: 5px; }
 <th>#</th>
 <th>Nombre</th>
 <th>QR</th>
- <th>Traila</th>
- <th>Celular</th>
- <th>Posicion</th>
+<th>Traila</th>
+<th>Celular</th>
+<th>Posicion</th>
+<th>Acciones</th>
 <th>Lunes</th>
 <th>Martes</th>
 <th>Miércoles</th>
@@ -73,141 +67,143 @@ button { padding: 6px 12px; margin: 5px; }
 
 <script>
 
-// 🔥 CONFIG FIREBASE
+// 🔥 FIREBASE CONFIG
 var firebaseConfig = {
- apiKey: "AIzaSyA0J5FQsMU0XGhQ0WTD_M1iuXQ71T2caFs",
-  authDomain: "terraflux-database.firebaseapp.com",
-  databaseURL: "https://terraflux-database-default-rtdb.firebaseio.com",
-  projectId: "terraflux-database",
-  storageBucket: "terraflux-database.firebasestorage.app",
-  messagingSenderId: "1055680733887",
-  appId: "1:1055680733887:web:c3ce8a6547574b5a461c0a",
-  measurementId: "G-NXT0XRRB07"
+ apiKey: "TU_API",
+ authDomain: "TU_PROJECT.firebaseapp.com",
+ databaseURL: "https://TU_PROJECT.firebaseio.com",
+ projectId: "TU_PROJECT"
 };
 firebase.initializeApp(firebaseConfig);
 
 const db = firebase.database();
 
-// 📅 SEMANA AUTOMÁTICA
-function obtenerSemanaActual() {
+// 📅 SEMANA
+function obtenerSemanaActual(){
     const hoy = new Date();
-    const inicio = new Date(hoy.getFullYear(), 0, 1);
-    const dias = Math.floor((hoy - inicio) / 86400000);
-    const semana = Math.ceil((dias + inicio.getDay() + 1) / 7);
+    const inicio = new Date(hoy.getFullYear(),0,1);
+    const dias = Math.floor((hoy-inicio)/86400000);
+    const semana = Math.ceil((dias+inicio.getDay()+1)/7);
     return `${hoy.getFullYear()}-S${semana}`;
 }
 
 let semanaActual = obtenerSemanaActual();
 
-function rutaSemana() {
-    return "asistencia/" + semanaActual;
+function rutaSemana(){
+    return "asistencia/"+semanaActual;
 }
 
 const dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
 
-let empleados = [];
+let empleados=[];
 
-// 🔥 CARGAR JUGADORES DESDE FIREBASE
-function cargarJugadores(callback) {
-    db.ref("jugadores").once("value", snap => {
-
-        empleados = [];
-        let i = 1;
-
-        snap.forEach(child => {
-            let data = child.val();
-
+// 🔥 CARGAR JUGADORES
+function cargarJugadores(callback){
+    db.ref("jugadores").once("value",snap=>{
+        empleados=[];
+        let i=1;
+        snap.forEach(child=>{
+            let d=child.val();
             empleados.push({
-                id: i++,
-                nombre: data.nombre,
-             traila: data.traila,
-             celular: data.celular,
-             posicion: data.posicion,
-                qr: child.key
+                id:i++,
+                nombre:d.nombre||"",
+                traila:d.traila||"",
+                celular:d.celular||"",
+                posicion:d.posicion||"",
+                qr:child.key
             });
         });
-
         callback();
     });
 }
 
-// ➕ AGREGAR JUGADOR
-function agregarJugador() {
-    let nombre = document.getElementById("nuevoNombre").value;
-    let qr = document.getElementById("nuevoQR").value;
- let traila = document.getElementById("nuevoTraila").value;
-  let celular = document.getElementById("nuevocelular").value;
-  let posicion = document.getElementById("nuevoposicion").value;
-    if(!nombre || !qr) return alert("Faltan datos");
+// ➕ AGREGAR
+function agregarJugador(){
 
-    db.ref("jugadores/" + qr).set({
-        nombre: nombre
+    let nombre=document.getElementById("nuevoNombre").value;
+    let qr=document.getElementById("nuevoQR").value;
+    let traila=document.getElementById("nuevoTraila").value;
+    let celular=document.getElementById("nuevoCelular").value;
+    let posicion=document.getElementById("nuevoPosicion").value;
+
+    if(!nombre||!qr) return alert("Faltan datos");
+
+    db.ref("jugadores/"+qr).set({
+        nombre,traila,celular,posicion
     });
 
-    cargarJugadores(() => crearTabla());
+    alert("Jugador agregado ✅");
+
+    cargarJugadores(()=>crearTabla());
 }
 
-// 🔥 CARGAR SEMANAS
-function cargarSemanas() {
-    db.ref("asistencia").once("value", snap => {
+// ✏️ EDITAR
+function editarJugador(qr){
 
-        const select = document.getElementById("selectorSemana");
-        select.innerHTML = "";
+    db.ref("jugadores/"+qr).once("value",snap=>{
 
-        let semanas = [];
+        let d=snap.val();
 
-        snap.forEach(child => semanas.push(child.key));
+        let nombre=prompt("Nombre:",d.nombre);
+        let traila=prompt("Traila:",d.traila);
+        let celular=prompt("Celular:",d.celular);
+        let posicion=prompt("Posicion:",d.posicion);
 
-        semanas.sort().reverse();
+        if(!nombre) return;
 
-        if (!semanas.includes(semanaActual)) {
-            semanas.unshift(semanaActual);
-        }
-
-        semanas.forEach(s => {
-            let opt = document.createElement("option");
-            opt.value = s;
-            opt.text = s;
-            if (s === semanaActual) opt.selected = true;
-            select.appendChild(opt);
+        db.ref("jugadores/"+qr).update({
+            nombre,traila,celular,posicion
         });
+
+        alert("Actualizado ✅");
+        cargarJugadores(()=>crearTabla());
     });
 }
 
-// 🔁 CAMBIAR SEMANA
-function cambiarSemana() {
-    semanaActual = document.getElementById("selectorSemana").value;
-    cargarJugadores(() => crearTabla());
+// 🗑️ BORRAR
+function borrarJugador(qr){
+
+    if(!confirm("¿Eliminar jugador?")) return;
+
+    db.ref("jugadores/"+qr).remove()
+    .then(()=>{
+        alert("Eliminado ✅");
+        cargarJugadores(()=>crearTabla());
+    });
 }
 
-// 🔥 CREAR TABLA
-function crearTabla() {
-    db.ref(rutaSemana()).once("value", snap => {
+// 🔥 TABLA
+function crearTabla(){
+    db.ref(rutaSemana()).once("value",snap=>{
 
-        const data = snap.val() || {};
-        const tbody = document.querySelector("#tabla tbody");
+        let data=snap.val()||{};
+        let tbody=document.querySelector("#tabla tbody");
+        tbody.innerHTML="";
 
-        tbody.innerHTML = "";
+        empleados.forEach(emp=>{
 
-        empleados.forEach(emp => {
+            let tr=document.createElement("tr");
 
-            let tr = document.createElement("tr");
+            let html=`
+            <td>${emp.id}</td>
+            <td>${emp.nombre}</td>
+            <td>${emp.qr}</td>
+            <td>${emp.traila}</td>
+            <td>${emp.celular}</td>
+            <td>${emp.posicion}</td>
 
-            let html = `
-                <td>${emp.id}</td>
-                <td>${emp.nombre}</td>
-                <td>${emp.qr}</td>
-                <td>${emp.traila}</td>
-                <td>${emp.celular}</td>
-                <td>${emp.posicion}</td>
+            <td>
+                <button onclick="editarJugador('${emp.qr}')">✏️</button>
+                <button onclick="borrarJugador('${emp.qr}')">🗑️</button>
+            </td>
             `;
 
-            dias.forEach(dia => {
-                let estado = data[emp.qr]?.[dia] || "";
-                html += `<td onclick="toggle('${emp.qr}','${dia}')">${estado}</td>`;
+            dias.forEach(d=>{
+                let v=data[emp.qr]?.[d]||"";
+                html+=`<td onclick="toggle('${emp.qr}','${d}')">${v}</td>`;
             });
 
-            tr.innerHTML = html;
+            tr.innerHTML=html;
             tbody.appendChild(tr);
         });
 
@@ -215,68 +211,65 @@ function crearTabla() {
     });
 }
 
-// 🔥 TOGGLE
-function toggle(qr, dia) {
-    db.ref(rutaSemana()).once("value", snap => {
+// 🔄 TOGGLE
+function toggle(qr,dia){
+    db.ref(rutaSemana()).once("value",snap=>{
 
-        let data = snap.val() || {};
+        let data=snap.val()||{};
+        if(!data[qr]) data[qr]={};
 
-        if (!data[qr]) data[qr] = {};
+        let v=data[qr][dia];
 
-        let valor = data[qr][dia];
-
-        if (valor === "✔️") data[qr][dia] = "❌";
-        else if (valor === "❌") data[qr][dia] = "";
-        else data[qr][dia] = "✔️";
+        if(v==="✔️") data[qr][dia]="❌";
+        else if(v==="❌") data[qr][dia]="";
+        else data[qr][dia]="✔️";
 
         db.ref(rutaSemana()).set(data);
-        cargarJugadores(() => crearTabla());
+        cargarJugadores(()=>crearTabla());
     });
 }
 
 // 🎨 COLORES
-function pintar() {
-    document.querySelectorAll("#tabla td").forEach(td => {
-        if (td.innerText === "✔️") td.className = "ok";
-        else if (td.innerText === "❌") td.className = "falta";
+function pintar(){
+    document.querySelectorAll("#tabla td").forEach(td=>{
+        if(td.innerText==="✔️") td.className="ok";
+        else if(td.innerText==="❌") td.className="falta";
     });
 }
 
 // 📥 EXCEL
-function descargarExcel() {
-    db.ref(rutaSemana()).once("value", snap => {
+function descargarExcel(){
+    db.ref(rutaSemana()).once("value",snap=>{
 
-        const data = snap.val() || {};
-        let exportar = [];
+        let data=snap.val()||{};
+        let exportar=[];
 
-        empleados.forEach(emp => {
-            let fila = {
-                Nombre: emp.nombre,
-                QR: emp.qr,
-             Traila: emp.qr,
-             Celular: emp.qr,
-             Posicion: emp.qr,
-                Semana: semanaActual
+        empleados.forEach(emp=>{
+            let fila={
+                Nombre:emp.nombre,
+                QR:emp.qr,
+                Traila:emp.traila,
+                Celular:emp.celular,
+                Posicion:emp.posicion,
+                Semana:semanaActual
             };
 
-            dias.forEach(dia => {
-                fila[dia] = data[emp.qr]?.[dia] || "";
+            dias.forEach(d=>{
+                fila[d]=data[emp.qr]?.[d]||"";
             });
 
             exportar.push(fila);
         });
 
-        const ws = XLSX.utils.json_to_sheet(exportar);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Asistencia");
-
-        XLSX.writeFile(wb, "Asistencia_" + semanaActual + ".xlsx");
+        let ws=XLSX.utils.json_to_sheet(exportar);
+        let wb=XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb,ws,"Asistencia");
+        XLSX.writeFile(wb,"Asistencia_"+semanaActual+".xlsx");
     });
 }
 
 // 🚀 INIT
-cargarSemanas();
-cargarJugadores(() => crearTabla());
+cargarJugadores(()=>crearTabla());
 
 </script>
 
