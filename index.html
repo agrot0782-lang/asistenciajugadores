@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Censo Trailas Cajon</title>
+
+
+
+</head>
+
+<input
+type="file"
+id="inputFoto"
+accept="image/*"
+capture="environment"
+style="display:none;">
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<link rel="stylesheet" href="css/style.css">
+<script src="js/firebase.js"></script>
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/render.js"></script>
+<script src="js/buscador.js"></script>
+<script src="js/camas.js"></script>
+<script src="js/editar.js"></script>
+<script src="js/excel.js"></script>
+<script src="js/minizonas.js"></script>
+<script src="js/main.js"></script>
+<script src="js/cambiarfoto.js"></script>
+<script src="js/historial.js"></script>
+
+
+<body>
+<div class="app-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+       
+
+        <div class="sidebar-menu">
+
+            <div class="menu-item active" onclick="iniciarSesion()">
+
+                <i data-lucide="layout-dashboard" width="22" height="22"></i>
+
+                <span>Iniciar Sesion</span>
+
+            </div>
+
+           
+
+          
+
+        </div>
+
+
+        <div class="sidebar-section">
+<div
+class="menu-item btn-admin oculto"
+
+onclick="borrarTodo()">
+
+   <i data-lucide="rotate-ccw" style="color: #ff0000;"></i>
+
+    <span>Reiniciar Censo</span>
+
+</div>
+
+
+      <div
+class="menu-item btn-admin oculto"
+
+onclick="exportarExcelBonito()">
+
+   <i data-lucide="file-spreadsheet" style="color: #16a34a;" ></i>
+
+    <span>Exportar Excel</span>
+
+</div>
+
+<div
+class="menu-item btn-admin oculto btn-historial"
+onclick="verHistorial()">
+
+    <i data-lucide="history" width="22" height="22"></i>
+
+    <span>Historial</span>
+
+</div>
+
+<div class="insight-card">
+
+    <div class="insight-top">
+
+        <i data-lucide="lightbulb"></i>
+
+        <div class="insight-title">
+            Insight
+        </div>
+
+    </div>
+
+    <div class="insight-text" id="insight-percent">
+0
+    </div>
+     <div class="insight-text" id="insight-disp">
+0
+    </div>
+</div>
+
+<div class="zonas-mini">
+
+    <div class="zonas-title">
+
+        <i data-lucide="map-pinned"></i>
+
+        <span>Zonas</span>
+
+    </div>
+
+    <div id="zonasMini"></div>
+
+</div>
+    </aside>
+
+    <!-- CONTENIDO -->
+    <main class="main-content">
+
+<!-- ZONAS -->
+<div class="zonas-box" style="display:none;">
+
+    <div class="zonas-header">
+        <h3>📍 Zonas</h3>
+        <span id="total-zonas"></span>
+    </div>
+
+    <div class="bars" id="zonas-bars"></div>
+
+
+
+// 🔥DASHOARD
+</div>
+        <div class="dashboard-grid">
+             <!-- TOTAL -->
+    <div class="stat-card">
+<div class="stat-icon"
+style="
+    background:#eef2ff;
+    color:#4f46e5;
+">
+
+    <i data-lucide="users"></i>
+
+</div>
+ <div class="stat-info">
+
+         <div class="stat-title">
+                Total
+            </div>
+      <div class="stat-number" id="total">
+                0
+            </div>
+  </div>
+
+    </div>
+
+<div class="stat-card">
+
+    <div class="stat-icon"
+    style="
+        background:#dcfce7;
+        color:#16a34a;
+    ">
+        <i data-lucide="badge-check"></i>
+    </div>
+
+    <div class="stat-info">
+
+        <div class="stat-title">
+            Ocupadas
+        </div>
+
+        <div class="stat-number" id="ocupadas">
+            0
+        </div>
+
+    </div>
+
+</div>
+<div class="stat-card">
+
+    <div class="stat-icon"
+    style="
+        background:#e5e7eb;
+        color:#6b7280;
+    ">
+       <i data-lucide="bed-single"></i>
+    </div>
+
+    <div class="stat-info">
+
+        <div class="stat-title">
+            Vacías
+        </div>
+
+        <div class="stat-number" id="vacias">
+            0
+        </div>
+
+    </div>
+
+</div>
+
+<div class="stat-card">
+
+    <div class="stat-icon"
+    style="
+        background:#fee2e2;
+        color:#dc2626;
+    ">
+       <i data-lucide="user-x"></i>
+    </div>
+
+    <div class="stat-info">
+
+        <div class="stat-title">
+            Fuera
+        </div>
+
+        <div class="stat-number" id="fuera">
+            0
+        </div>
+
+    </div>
+
+</div>
+
+<div class="stat-card">
+
+    <div class="stat-icon"
+    style="
+        background:#dbeafe;
+        color:#2563eb;
+    ">
+       <i data-lucide="user"></i>
+    </div>
+
+    <div class="stat-info">
+
+        <div class="stat-title">
+            Hombres
+        </div>
+
+        <div class="stat-number" id="hombres">
+            0
+        </div>
+
+    </div>
+
+</div>
+
+<div class="stat-card">
+
+    <div class="stat-icon"
+    style="
+        background:#fce7f3;
+        color:#db2777;
+    ">
+        <i data-lucide="user-round"></i>
+    </div>
+
+    <div class="stat-info">
+
+        <div class="stat-title">
+            Mujeres
+        </div>
+
+        <div class="stat-number" id="mujeres">
+            0
+        </div>
+
+    </div>
+
+</div>
+
+<div id="miniDashZonas"></div>
+
+</div>
+
+
+<div class="search-box">
+
+    <i data-lucide="search"></i>
+
+    <input
+    type="text"
+    id="buscar"
+    placeholder="Buscar por QR, nombre o traila...">
+
+</div>
+
+
+
+<div class="tabla-container">
+<table>
+
+<thead>
+<tr>
+<th>ID</th>
+<th>Nombre</th>
+<th>Apellidos</th>
+
+<th onclick="ordenarPor('traila')" style="cursor:pointer">
+    Traila 🔃
+</th>
+
+<th onclick="ordenarPor('cama')" style="cursor:pointer">
+    Cama 🔃
+</th>
+
+<th>Sexo</th>
+<th>Zona</th>
+<th>Actividad</th>
+<th>Estado</th>
+<th>Acciones</th>
+</tr>
+</thead>
+
+<tbody id="tabla"></tbody>
+
+
+</table>
+
+
+</div>
+<div class="mapa-box">
+
+    <div class="mapa-header">
+
+        <div class="mapa-title">
+
+            <i data-lucide="bed-double"></i>
+
+            <span>Mapa Visual de Camas</span>
+
+        </div>
+
+    </div>
+
+    <div id="mapaCamas"></div>
+
+</div>
+
+
+<div id="panelEditar" class="panel-editar">
+
+<div class="panel-header">
+
+    <h2>Editar trabajador</h2>
+
+    <button
+    class="cerrar-panel"
+    onclick="cerrarPanelEditar()">
+
+        ✕
+
+    </button>
+
+</div>
+
+<div id="contenidoPanelEditar">
+
+</div>
+
+</div>
+
+
+
+</div>
+</div>
+
+
+</main>
+
+</div>
+
+
+
+</body>
+</html>
