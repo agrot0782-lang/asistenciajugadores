@@ -507,8 +507,8 @@ this.src='https://ui-avatars.com/api/?name=${trabajador.nombre}&background=rando
 "
 
 style="
-width:110px;
-height:110px;
+width:210px;
+height:210px;
 border-radius:50%;
 object-fit:cover;
 border:4px solid ${trabajador.sexo==='FEMENINO' ? '#f472b6' : '#60a5fa'};
